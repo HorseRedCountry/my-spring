@@ -50,4 +50,83 @@ public final class PropUtil {
         return prop;
     }
 
+    /**
+     * 获取字符型属性
+     *
+     * @param prop 配置信息
+     * @param key  关键字
+     * @return 关键字对应的属性值
+     */
+    public static String getString(Properties prop, String key) {
+        return getString(prop, key, "");
+    }
+
+    /**
+     * 获取字符型属性（可指定默认值）
+     *
+     * @param prop         配置信息
+     * @param key          关键字
+     * @param defaultValue 默认值
+     * @return 属性值
+     */
+    public static String getString(Properties prop, String key, String defaultValue) {
+        String value = defaultValue;
+        if (prop.contains(key)) {
+            value = prop.getProperty(key);
+        }
+        return value;
+    }
+
+    /**
+     * 获取数值型属性(默认值为0)
+     *
+     * @param prop 配置信息
+     * @param key  关键字
+     * @return 属性值
+     */
+    public static int getInt(Properties prop, String key) {
+        return getInt(prop, key, 0);
+    }
+
+    /***
+     * 获取数值型属性
+     * @param prop 配置新新
+     * @param key 关键字
+     * @param defaultValue 默认值
+     * @return 属性值
+     */
+    public static int getInt(Properties prop, String key, int defaultValue) {
+        int value = defaultValue;
+        if (prop.contains(key)) {
+            value = CastUtil.castInt(prop.getProperty(key));
+        }
+        return value;
+    }
+
+    /**
+     * 获取布尔型属性(默认值为false)
+     *
+     * @param prop 配置信息
+     * @param key  关键字
+     * @return 属性值
+     */
+    public static boolean getBoolean(Properties prop, String key) {
+        return getBoolean(prop, key, false);
+    }
+
+    /***
+     * 获取布尔型属性
+     * @param prop 配置新新
+     * @param key 关键字
+     * @param defaultValue 默认值
+     * @return 属性值
+     */
+    public static boolean getBoolean(Properties prop, String key, boolean defaultValue) {
+        boolean value = defaultValue;
+        if (prop.contains(key)) {
+            value = CastUtil.castBoolean(prop.getProperty(key));
+        }
+        return value;
+    }
+
 }
