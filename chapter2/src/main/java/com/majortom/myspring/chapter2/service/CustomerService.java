@@ -50,7 +50,7 @@ public class CustomerService {
      */
     public List<Customer> getCustomerList() {
         List<Customer> customerList = Lists.newArrayList();
-        String sql = "SELECT * FROM customer";
+        String sql = "SELECT * FROM consumer";
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
