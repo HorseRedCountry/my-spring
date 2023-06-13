@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.omg.CORBA.OBJ_ADAPTER;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +29,14 @@ public class CustomerServiceTest {
     @Before
     public void init() {
         //Todo 初始化数据库
+    }
+
+    @Test
+    public void getCustomerListTest(){
+        List<Customer> customerList = customerService.getCustomerList();
+        for (Customer customer : customerList) {
+            System.out.println(customer.toString());
+        }
     }
 
     @Test

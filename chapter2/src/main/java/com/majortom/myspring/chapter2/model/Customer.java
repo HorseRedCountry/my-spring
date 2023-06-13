@@ -1,6 +1,9 @@
 package com.majortom.myspring.chapter2.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * <p>
@@ -11,6 +14,9 @@ import lombok.Data;
  * @date 2023/6/1 23:07
  **/
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Customer {
     private long id;
     private String name;
