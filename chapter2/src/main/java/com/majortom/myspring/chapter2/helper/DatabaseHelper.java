@@ -2,7 +2,9 @@ package com.majortom.myspring.chapter2.helper;
 
 import com.majortom.myspring.chapter2.utils.PropUtil;
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
+import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +12,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -24,6 +27,8 @@ public final class DatabaseHelper {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseHelper.class);
 
     private static final QueryRunner QUERY_RUNNER = new QueryRunner();
+
+    private static final ThreadLocal<Connection> CONNECTION_HOLDER = new ThreadLocal<>();
 
     private static final String DRIVER;
     private static final String URL;
@@ -49,26 +54,35 @@ public final class DatabaseHelper {
      * @return 数据库连接
      */
     public static Connection getConnection() {
-        Connection conn = null;
-        try {
-            conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-        } catch (SQLException e) {
-            LOGGER.error("Get connection failure");
+        Connection conn = CONNECTION_HOLDER.get();
+        if (null == conn) {
+            try {
+                conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            } catch (SQLException e) {
+                LOGGER.error("Get connection failure");
+                throw new RuntimeException(e);
+            } finally {
+                CONNECTION_HOLDER.set(conn);
+            }
         }
+
         return conn;
     }
 
     /**
      * 关闭数据库连接
-     *
-     * @param conn 数据库连接
      */
-    public static void closeConnection(Connection conn) {
+    public static void closeConnection() {
+        Connection conn = CONNECTION_HOLDER.get();
+
         if (null != conn) {
             try {
                 conn.close();
             } catch (SQLException e) {
                 LOGGER.error("Close connection failure", e);
+                throw new RuntimeException(e);
+            } finally {
+                CONNECTION_HOLDER.remove();
             }
         }
     }
@@ -86,16 +100,57 @@ public final class DatabaseHelper {
      */
     public static <T> List<T> queryEntityList(Class<T> entityClass, String sql, Object... params) {
         List<T> entityList;
-        Connection conn = getConnection();
         try {
+            Connection conn = getConnection();
             entityList = QUERY_RUNNER.query(conn, sql, new BeanListHandler<T>(entityClass), params);
         } catch (SQLException e) {
             LOGGER.error("Query entityList failure", e);
             throw new RuntimeException(e);
         } finally {
-            closeConnection(conn);
+            closeConnection();
         }
         return entityList;
+    }
+
+    /**
+     * 查询实体
+     *
+     * @param entityClass 实体类Class
+     * @param sql         查询sql
+     * @param params      查询参数
+     * @param <T>         实体类型
+     * @return 实体
+     */
+    public static <T> T queryEntity(Class<T> entityClass, String sql, Object... params) {
+        T entity;
+        try {
+            Connection conn = getConnection();
+            entity = QUERY_RUNNER.query(conn, sql, new BeanHandler<T>(entityClass), params);
+        } catch (SQLException e) {
+            LOGGER.error("Query entityList failure", e);
+            throw new RuntimeException(e);
+        } finally {
+            closeConnection();
+        }
+        return entity;
+    }
+
+    /**
+     * 执行查询语句
+     * @param sql 查询sql
+     * @param params 查询参数
+     * @return 查询结果
+     */
+    public static List<Map<String, Object>> executeQuery(String sql, Object... params) {
+        List<Map<String, Object>> result;
+        try {
+            Connection conn = getConnection();
+            result = QUERY_RUNNER.query(conn, sql, new MapListHandler(), params);
+        } catch (Exception e) {
+            LOGGER.error("Execute query failure", e);
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 
 }
