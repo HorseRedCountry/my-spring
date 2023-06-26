@@ -1,6 +1,9 @@
 package com.majortom.myspring.chapter2.helper;
 
+import com.google.common.collect.Lists;
 import com.majortom.myspring.chapter2.utils.PropUtil;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
@@ -137,7 +140,8 @@ public final class DatabaseHelper {
 
     /**
      * 执行查询语句
-     * @param sql 查询sql
+     *
+     * @param sql    查询sql
      * @param params 查询参数
      * @return 查询结果
      */
@@ -151,6 +155,80 @@ public final class DatabaseHelper {
             throw new RuntimeException(e);
         }
         return result;
+    }
+
+    /**
+     * 执行更新语句
+     *
+     * @param sql    更新sql
+     * @param params 查询参数
+     * @return 更新影响的行数
+     */
+    public static int executeUpdate(String sql, Object... params) {
+        int rows = 0;
+        try {
+            Connection conn = getConnection();
+            rows = QUERY_RUNNER.update(conn, sql, params);
+        } catch (Exception e) {
+            LOGGER.error("Execute update failure", e);
+            throw new RuntimeException(e);
+        } finally {
+            closeConnection();
+        }
+        return rows;
+    }
+
+    /**
+     * 插入实体
+     *
+     * @param entityClass
+     * @param fieldMap
+     * @param <T>
+     * @return
+     */
+    public static <T> boolean insertEntry(Class<T> entityClass, Map<String, Object> fieldMap) {
+        if (MapUtils.isEmpty(fieldMap)) {
+            LOGGER.error("Cannot insert entity:fieldMap is empty.");
+            return false;
+        }
+        String sql = "INSERT INTO " + getTableName(entityClass);
+        StringBuilder columns = new StringBuilder("(");
+        StringBuilder values = new StringBuilder("(");
+        for (String fieldName : fieldMap.keySet()) {
+            columns.append(fieldName).append(", ");
+            values.append("?, ");
+        }
+        columns.replace(columns.lastIndexOf(", "), columns.length(), ")");
+        values.replace(values.lastIndexOf(", "), values.length(), ")");
+        sql += columns + " VALUES " + values;
+        Object[] params = fieldMap.values().toArray();
+        return executeUpdate(sql, params) == 1;
+    }
+
+    /**
+     * 更新实体
+     * @param entityClass
+     * @param id
+     * @param fieldMap
+     * @return
+     * @param <T>
+     */
+    public static <T> boolean updateEntry(Class<T> entityClass, long id, Map<String, Object> fieldMap) {
+        if (MapUtils.isEmpty(fieldMap)) {
+            LOGGER.error("Cannot insert entity:fieldMap is empty.");
+            return false;
+        }
+        String sql = "UPDATE " + getTableName() + " SET ";
+        StringBuilder columns = new StringBuilder();
+        for (String fieldName : fieldMap.keySet()) {
+            columns.append(fieldName).append("=?, ");
+        }
+        sql += columns.substring(0, columns.lastIndexOf(", ")) + " WHERE id=?";
+        List<Object> paramList = Lists.newArrayList();
+        paramList.addAll(fieldMap.values());
+        paramList.add(id);
+        Object[] paramArr = paramList.toArray();
+        return executeUpdate(sql, paramArr) == 1;
     }
 
 }
