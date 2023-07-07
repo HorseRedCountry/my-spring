@@ -1,12 +1,10 @@
 package com.majortom.myspring.chapter2.service;
 
-import com.google.common.collect.Lists;
 import com.majortom.myspring.chapter2.helper.DatabaseHelper;
 import com.majortom.myspring.chapter2.model.Customer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
 import java.util.List;
 import java.util.Map;
 
@@ -51,7 +49,7 @@ public class CustomerService {
      * @return 是否成功
      */
     public boolean createCustomer(Map<String, Object> fieldMap) {
-        return true;
+        return DatabaseHelper.insertEntry(Customer.class, fieldMap);
     }
 
     /**
@@ -62,7 +60,7 @@ public class CustomerService {
      * @return 是否成功
      */
     public boolean updateCustomer(Long id, Map<String, Object> fieldMap) {
-        return true;
+        return DatabaseHelper.updateEntry(Customer.class, id, fieldMap);
     }
 
     /**
@@ -72,7 +70,7 @@ public class CustomerService {
      * @return 是否成功
      */
     public boolean deleteCustomer(Long id) {
-        return true;
+        return DatabaseHelper.deleteEntry(Customer.class, id);
     }
 
 }

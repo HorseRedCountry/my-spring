@@ -2,8 +2,8 @@ package com.majortom.myspring.chapter2.helper;
 
 import com.google.common.collect.Lists;
 import com.majortom.myspring.chapter2.utils.PropUtil;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -27,28 +26,43 @@ import java.util.Properties;
  * @date 2023/6/13 23:07
  **/
 public final class DatabaseHelper {
+    /**
+     * 日志工具
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseHelper.class);
 
-    private static final QueryRunner QUERY_RUNNER = new QueryRunner();
+    /**
+     * 数据库连接池
+     */
+    private static final ThreadLocal<Connection> CONNECTION_HOLDER;
 
-    private static final ThreadLocal<Connection> CONNECTION_HOLDER = new ThreadLocal<>();
+    /**
+     * 查询解析器
+     */
+    private static final QueryRunner QUERY_RUNNER;
 
-    private static final String DRIVER;
-    private static final String URL;
-    private static final String USERNAME;
-    private static final String PASSWORD;
+    /**
+     * 数据源
+     */
+    private static final BasicDataSource DATA_SOURCE;
+
 
     static {
+        //初始化数据库连接池
+        CONNECTION_HOLDER = new ThreadLocal<>();
+        QUERY_RUNNER = new QueryRunner();
+
         Properties prop = PropUtil.loadProperties("config.properties");
-        DRIVER = prop.getProperty("jdbc.driver");
-        URL = prop.getProperty("jdbc.url");
-        USERNAME = prop.getProperty("jdbc.username");
-        PASSWORD = prop.getProperty("jdbc.password");
-        try {
-            Class.forName(DRIVER);
-        } catch (ClassNotFoundException e) {
-            LOGGER.error("Could not load jdbc driver", e);
-        }
+        String driver = prop.getProperty("jdbc.driver");
+        String url = prop.getProperty("jdbc.url");
+        String userName = prop.getProperty("jdbc.username");
+        String password = prop.getProperty("jdbc.password");
+
+        DATA_SOURCE = new BasicDataSource();
+        DATA_SOURCE.setDriverClassName(driver);
+        DATA_SOURCE.setUrl(url);
+        DATA_SOURCE.setUsername(userName);
+        DATA_SOURCE.setPassword(password);
     }
 
     /**
@@ -60,7 +74,7 @@ public final class DatabaseHelper {
         Connection conn = CONNECTION_HOLDER.get();
         if (null == conn) {
             try {
-                conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+                conn = DATA_SOURCE.getConnection();
             } catch (SQLException e) {
                 LOGGER.error("Get connection failure");
                 throw new RuntimeException(e);
@@ -181,10 +195,10 @@ public final class DatabaseHelper {
     /**
      * 插入实体
      *
-     * @param entityClass
-     * @param fieldMap
-     * @param <T>
-     * @return
+     * @param entityClass /
+     * @param fieldMap    /
+     * @param <T>         /
+     * @return /
      */
     public static <T> boolean insertEntry(Class<T> entityClass, Map<String, Object> fieldMap) {
         if (MapUtils.isEmpty(fieldMap)) {
@@ -207,18 +221,19 @@ public final class DatabaseHelper {
 
     /**
      * 更新实体
-     * @param entityClass
-     * @param id
-     * @param fieldMap
-     * @return
-     * @param <T>
+     *
+     * @param entityClass 实体类
+     * @param id          id
+     * @param fieldMap    字段集合
+     * @param <T>         类型
+     * @return /
      */
     public static <T> boolean updateEntry(Class<T> entityClass, long id, Map<String, Object> fieldMap) {
         if (MapUtils.isEmpty(fieldMap)) {
             LOGGER.error("Cannot insert entity:fieldMap is empty.");
             return false;
         }
-        String sql = "UPDATE " + getTableName() + " SET ";
+        String sql = "UPDATE " + getTableName(entityClass) + " SET ";
         StringBuilder columns = new StringBuilder();
         for (String fieldName : fieldMap.keySet()) {
             columns.append(fieldName).append("=?, ");
@@ -229,6 +244,15 @@ public final class DatabaseHelper {
         paramList.add(id);
         Object[] paramArr = paramList.toArray();
         return executeUpdate(sql, paramArr) == 1;
+    }
+
+    public static <T> boolean deleteEntry(Class<T> entityClass, long id) {
+        String sql = "DELETE FROM " + getTableName(entityClass) + " WHERE id=?";
+        return executeUpdate(sql, id) == 1;
+    }
+
+    private static String getTableName(Class<?> entityClass) {
+        return entityClass.getSimpleName();
     }
 
 }
