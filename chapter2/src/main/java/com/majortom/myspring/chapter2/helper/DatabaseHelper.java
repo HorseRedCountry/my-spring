@@ -87,24 +87,6 @@ public final class DatabaseHelper {
     }
 
     /**
-     * 关闭数据库连接
-     */
-    public static void closeConnection() {
-        Connection conn = CONNECTION_HOLDER.get();
-
-        if (null != conn) {
-            try {
-                conn.close();
-            } catch (SQLException e) {
-                LOGGER.error("Close connection failure", e);
-                throw new RuntimeException(e);
-            } finally {
-                CONNECTION_HOLDER.remove();
-            }
-        }
-    }
-
-    /**
      * 查询实体列表
      * <T> 声明参数类型，即先把T给声明出来，不然编译器不认识
      * List<T> 返回集合，集合的元素为T类型
@@ -123,8 +105,6 @@ public final class DatabaseHelper {
         } catch (SQLException e) {
             LOGGER.error("Query entityList failure", e);
             throw new RuntimeException(e);
-        } finally {
-            closeConnection();
         }
         return entityList;
     }
@@ -146,8 +126,6 @@ public final class DatabaseHelper {
         } catch (SQLException e) {
             LOGGER.error("Query entityList failure", e);
             throw new RuntimeException(e);
-        } finally {
-            closeConnection();
         }
         return entity;
     }
@@ -186,8 +164,6 @@ public final class DatabaseHelper {
         } catch (Exception e) {
             LOGGER.error("Execute update failure", e);
             throw new RuntimeException(e);
-        } finally {
-            closeConnection();
         }
         return rows;
     }
